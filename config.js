@@ -6,7 +6,7 @@
 // Instrukcja: https://together.ai → API Keys
 
 // USUŃ klucz API z frontend (teraz jest bezpieczny w backend):
-// const TOGETHER_API_KEY = '...'; // USUNIĘTE!
+// const OPENAI_API_KEY = '...'; // USUNIĘTE!
 
 // Backend URL:
 const BACKEND_API_URL = 'http://localhost:5000/api/chat';

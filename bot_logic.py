@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 # ==============================================
 
 # Sprawdź czy klucz API jest dostępny
-api_key = os.getenv('TOGETHER_API_KEY')
+api_key = os.getenv('OPENAI_API_KEY')
 if not api_key:
-    logger.error("BŁĄD: Brak zmiennej środowiskowej TOGETHER_API_KEY")
+    logger.error("BŁĄD: Brak zmiennej środowiskowej OPENAI_API_KEY")
     raise Exception("Brak Together API key")
 
 client = Together(api_key=api_key)
@@ -576,9 +576,7 @@ def process_user_message(user_message, user_id=None):
         logger.error(f"❌ Błąd przetwarzania wiadomości: {e}")
         return "😔 Wystąpił problem. Spróbuj ponownie lub zadzwoń: **123-456-789** 📞"
 
-# ===========================================
-# DODAJ POMOCNICZE FUNKCJE
-# ===========================================
+
 
 def extract_day_from_message(message):
     """Wyciągnij dzień z wiadomości"""

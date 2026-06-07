@@ -1,31 +1,28 @@
 # Smart FAQ Bot - Salon Fryzjerski "Kleopatra"
 
-🤖 **Zaawansowany bot wieloplatformowy** z integracją AI (Together API), Facebook Messenger, systemem kalendarza i rezerwacji online. Obsługuje wielodostęp użytkowników z separacją sesji.
+🤖 **Chatbot dla salonu fryzjerskiego** z integracją AI (GPT-4o-mini via GitHub Models), Facebook Messenger, Google Calendar i interfejsem webowym. Obsługuje wielu użytkowników równocześnie z separacją sesji.
 
 ## 🚀 Funkcje
 
-- 🤖 **Integracja z Together AI**: Inteligentne odpowiedzi powered by Llama-3.1-70B
-- 📘 **Facebook Messenger**: Natywna integracja z webhook
-- 📅 **System rezerwacji**: Zarządzanie terminami i kalendarzem
-- 👥 **Multi-user**: Równoczesna obsługa wielu użytkowników
-- 🔄 **Separacja sesji**: Każdy użytkownik ma własną sesję rozmowy
-- 💬 **Interfejs webowy**: Responsywny chat na stronie
-- 📱 **Mobile-first**: Działa perfekcyjnie na telefonach
-- 🧪 **Kompleksowe testy**: System testów wielodostępu użytkowników
+- 🤖 **GPT-4o-mini** (GitHub Models — bezpłatny) lub OpenAI API
+- 📘 **Facebook Messenger** — natywna integracja z webhookiem
+- 📅 **Google Calendar** — rezerwacje, anulowania, sprawdzanie terminów
+- 👥 **Multi-user** — każdy użytkownik ma własną sesję z TTL 24h
+- 💬 **Interfejs webowy** — responsywny chat (`index.html`)
+- 📱 **Mobile-first** — działa na telefonach
 
 ## 📁 Struktura projektu
 
 ```
 smart-faq-bot/
-├── backend.py              # Główny serwer Flask + API endpoints
-├── bot_logic_ai.py         # Logika AI i zarządzanie sesjami
-├── facebook_webhook.py     # Webhook Facebook Messenger
-├── calendar_system.py      # System kalendarza i rezerwacji
-├── test_multi_users.py     # Testy wielodostępu użytkowników
-├── index.html              # Interfejs webowy chatu
-├── style.css               # Style responsywne
+├── backend.py              # Serwer Flask + endpointy API + webhook FB
+├── bot_logic_ai.py         # Logika AI, sesje, integracja z kalendarzem
+├── calendar_service.py     # Google Calendar API
+├── index.html              # Interfejs webowy
+├── style.css               # Style
 ├── script.js               # Frontend JavaScript
-├── config.js               # Konfiguracja bazy wiedzy
+├── config.js               # Konfiguracja URL backendu
+├── credentials.json        # Google Service Account (NIE commituj!)
 ├── .env                    # Zmienne środowiskowe (NIE commituj!)
 ├── .env.example            # Przykład konfiguracji
 └── README.md               # Ten plik
@@ -33,288 +30,202 @@ smart-faq-bot/
 
 ## ⚡ Szybki start
 
-### 1. **Przygotowanie środowiska**
+### 1. Klonowanie i środowisko
 
 ```bash
-# Sklonuj repozytorium
-git clone https://github.com/USERNAME/smart-faq-bot.git
-cd smart-faq-bot
+git clone https://github.com/roccoss39/Smart-faq-bot.git
+cd Smart-faq-bot
 
-# Aktywuj wirtualne środowisko (jeśli używasz)
-source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate          # Linux/Mac
+# .venv\Scripts\activate           # Windows
 
-# Zainstaluj zależności
-pip install -r requirements.txt
+pip install flask flask-cors python-dotenv requests openai pytz \
+            google-auth google-auth-oauthlib google-api-python-client
 ```
 
-### 2. **Konfiguracja zmiennych środowiskowych**
+### 2. Plik `.env`
 
 ```bash
-# Skopiuj przykład konfiguracji
 cp .env.example .env
-
-# Edytuj .env i uzupełnij klucze API
 nano .env
 ```
 
-**Zawartość `.env`:**
-```bash
-# Together AI
-TOGETHER_API_KEY=your_together_ai_key_here
+Zawartość `.env`:
+
+```env
+# AI — GitHub Models (darmowy) lub OpenAI
+OPENAI_API_KEY=ghp_twój_token_github
 
 # Facebook Messenger
-FACEBOOK_ACCESS_TOKEN=your_facebook_page_access_token
-FACEBOOK_VERIFY_TOKEN=your_custom_verify_token_12345
+FACEBOOK_PAGE_ACCESS_TOKEN=EAAxxxxxxxxxxxxxxx
+FACEBOOK_VERIFY_TOKEN=twój_sekretny_token
+FACEBOOK_PAGE_ID=750208294831428
 
-# Google Calendar (opcjonalnie)
-GOOGLE_CALENDAR_ID=your_calendar_id
+# Google Calendar
+GOOGLE_CALENDAR_ID=twój_calendar_id@group.calendar.google.com
 ```
 
-### 3. **Uruchomienie backendu**
+### 3. Google Calendar
+
+Umieść plik `credentials.json` (Google Service Account) w głównym folderze projektu.  
+Uprawnienia wymagane: `https://www.googleapis.com/auth/calendar`
+
+### 4. Uruchomienie
 
 ```bash
-# Uruchom serwer Flask
 python backend.py
 ```
 
-Serwer wystartuje na `http://localhost:5000`
+Serwer startuje na `http://localhost:5000`.  
+Sprawdź: `http://localhost:5000/api/health`
 
-### 4. **Konfiguracja ngrok dla Facebook Webhook**
+### 5. Test lokalny (bez Facebooka)
 
 ```bash
-# W nowym terminalu uruchom ngrok
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"messages": [{"role": "user", "content": "Cześć, jakie macie usługi?"}]}'
+```
+
+Lub otwórz `index.html` w przeglądarce.
+
+## 🔧 Facebook Messenger
+
+### Wymagania
+
+- Konto Facebook Developers
+- Strona Facebook podpięta do aplikacji
+- Page Access Token z uprawnieniami `pages_messaging`
+
+### Konfiguracja webhooka
+
+```bash
+# Terminal 1 — backend
+python backend.py
+
+# Terminal 2 — ngrok (tunel HTTPS)
 ngrok http 5000
 ```
 
-**Otrzymasz URL typu:** `https://abc123.ngrok.io`
+W panelu [Facebook Developers](https://developers.facebook.com):
 
-### 5. **Konfiguracja Facebook Webhook**
+1. Aplikacja → **Use cases → Webhooks**
+2. **Select product:** Page
+3. **Callback URL:** `https://twój-url.ngrok-free.app/`
+4. **Verify Token:** wartość `FACEBOOK_VERIFY_TOKEN` z `.env`
+5. **Verify and Save** → przewiń do pola `messages` i włącz **Subscribed**
 
-1. **Idź do Facebook Developers** → Twoja aplikacja → Messenger → Settings
-2. **Webhook URL:** `https://abc123.ngrok.io/` (URL z ngrok)
-3. **Verify Token:** Ten sam co w `.env` (np. `your_custom_verify_token_12345`)
-4. **Subscription Fields:** Zaznacz `messages`, `messaging_postbacks`
-5. **Kliknij "Verify and Save"**
+> ⚠️ Ngrok generuje nowy URL przy każdym restarcie — aktualizuj Callback URL po każdym restarcie.  
+> Dla stałego URL użyj `ngrok http --domain=twoja-domena.ngrok-free.app 5000`
 
-### 6. **Test działania**
+> ⚠️ Aplikacja w trybie **Development** — wiadomości z Messengera docierają tylko po opublikowaniu aplikacji przez Meta App Review.
 
-```bash
-# Uruchom testy wielodostępu
-python test_multi_users.py
+## 🤖 Zmiana modelu AI
 
-# Lub otwórz interfejs webowy
-# http://localhost:5000/
+Projekt domyślnie używa **GitHub Models** (darmowe, limit ~150 req/dzień).
+
+### GitHub Models (domyślny, darmowy)
+
+Token: github.com → Settings → Developer settings → Personal access tokens
+
+```env
+OPENAI_API_KEY=ghp_twój_token
 ```
 
-## 🔧 Szczegółowa konfiguracja
+`bot_logic_ai.py` używa `base_url="https://models.inference.ai.azure.com"`.
 
-### **Together AI API Setup**
+### OpenAI API (płatny, bez limitu)
 
-1. Idź na [api.together.xyz](https://api.together.xyz)
-2. Stwórz konto i wygeneruj API key
-3. Dodaj do `.env`: `TOGETHER_API_KEY=your_key_here`
-
-### **Facebook Messenger Setup**
-
-1. **Facebook Developers** → Create App → Business
-2. **Add Product** → Messenger
-3. **Generate Page Access Token** → Dodaj do `.env`
-4. **Webhook setup** (jak powyżej z ngrok)
-5. **Subscribe to page** → Wybierz swoją stronę Facebook
-
-### **Google Calendar (opcjonalnie)**
-
-```bash
-# Pobierz credentials.json z Google Cloud Console
-# Dodaj GOOGLE_CALENDAR_ID do .env
+```env
+OPENAI_API_KEY=sk-proj-twój_klucz
 ```
 
-## 🧪 Testowanie
-
-### **Test podstawowy**
-```bash
-python backend.py
-# Odwiedź http://localhost:5000
-```
-
-### **Test wielodostępu użytkowników**
-```bash
-python test_multi_users.py
-```
-
-### **Test Facebook Messenger**
-```bash
-# 1. Uruchom backend + ngrok
-# 2. Skonfiguruj webhook
-# 3. Napisz na FB do swojego bota
-```
-
-### **Debug API**
-```bash
-curl http://localhost:5000/api/health
-curl -X POST http://localhost:5000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "test", "user_id": "test123"}'
-```
-
-## 🎯 Funkcje specjalne
-
-### **Wielodostęp użytkowników**
-- Każdy użytkownik ma **osobną sesję**
-- **Separacja rozmów** - bez mieszania kontekstów
-- **Automatic cleanup** wygasłych sesji
-- **Memory monitoring** i optymalizacja
-
-### **System rezerwacji**
-```
-User: "Chcę się umówić"
-Bot: "Dostępne terminy: jutro 10:00, 14:00..."
-User: "Jutro 10:00"
-Bot: "Podaj imię i telefon"
-User: "Jan Kowalski, 123456789"
-Bot: ✅ "Rezerwacja potwierdzona!"
-```
-
-### **Inteligentne odpowiedzi**
-- **Kontekst rozmowy** - pamięta wcześniejsze wiadomości
-- **Intent recognition** - rozpoznaje intencje użytkownika
-- **Fallback responses** - gdy AI nie rozumie
-
-## 🔧 Customizacja
-
-### **Edycja informacji o salonie**
+W `bot_logic_ai.py` usuń `base_url`:
 
 ```python
-# W bot_logic_ai.py zmień SYSTEM_PROMPT
-SYSTEM_PROMPT = """
-INFORMACJE O SALONIE:
-- Nazwa: Twój Salon
-- Adres: Twój adres  
-- Telefon: Twój numer
-...
-"""
+client = OpenAI(api_key=api_key, timeout=30.0)
 ```
 
-### **Dodanie nowych usług**
+Zmień model na `gpt-4o` jeśli potrzebujesz wyższej jakości.
 
-```python
-CENNIK USŁUG:
-STRZYŻENIE:
-- Damskie: 80-120 zł
-- Męskie: 50-70 zł
-TWOJE_NOWE_USŁUGI:
-- Manicure: 60 zł
-- Pedicure: 80 zł
+## 🗓️ System rezerwacji
+
+Bot prowadzi klienta przez pełny proces:
+
+```
+Klient: "Chcę się umówić na piątek"
+Bot:    "Sprawdzam wolne terminy na piątek..."
+        [pobiera z Google Calendar]
+        "Dostępne: 09:00, 10:00, 14:30..."
+Klient: "14:30"
+Bot:    "Jaką usługę wybierasz?"
+Klient: "Strzyżenie, Anna Nowak, 987654321"
+Bot:    📋 Podsumowanie → pyta o TAK
+Klient: "TAK"
+Bot:    ✅ REZERWACJA POTWIERDZONA → zapisuje do kalendarza
 ```
 
-### **Zmiana kolorów interfejsu**
+**Usługi:** Strzyżenie (80 zł), Farbowanie (150 zł), Stylizacja (120 zł)  
+**Godziny:** Pon–Pt 9:00–19:00, Sobota 9:00–16:00, Niedziela — zamknięte
 
-```css
-/* W style.css */
-:root {
-    --primary-color: #TwójKolor;
-    --secondary-color: #TwójKolor2;
-}
-```
+## 🛠️ Endpointy API
 
-## 📊 Monitoring i Analytics
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| GET    | `/`      | Weryfikacja webhooka FB |
+| POST   | `/`      | Odbiór wiadomości FB |
+| POST   | `/api/chat` | Interfejs webowy |
+| GET    | `/api/health` | Status serwisu |
+| GET    | `/api/debug/sessions` | Aktywne sesje |
+| POST   | `/api/debug/reset/<id>` | Reset sesji |
 
-### **Logi systemu**
+## 🚨 Rozwiązywanie problemów
+
+**Bot nie odpowiada na Facebooku**
 ```bash
-# Sprawdź logi backendu
-tail -f backend.log
-
-# Sprawdź sesje użytkowników
-curl http://localhost:5000/api/sessions
+# Sprawdź logi — czy webhook dociera?
+# Ngrok dashboard: http://127.0.0.1:4040
+# Upewnij się że aplikacja FB jest opublikowana
 ```
 
-### **Metryki wydajności**
-```python
-# W test_multi_users.py
-def check_memory_usage():
-    # Monitorowanie zużycia pamięci przez sesje
-```
-
-## 🚨 Troubleshooting
-
-### **Problem: Bot nie odpowiada na Facebook**
-
+**Błąd 400 z `/api/chat`**
 ```bash
-# 1. Sprawdź logi backendu
-python backend.py
-
-# 2. Sprawdź webhook URL
-curl https://your-ngrok-url.ngrok.io/
-
-# 3. Sprawdź czy backend otrzymuje wiadomości
-# Powinnaś widzieć: "👤 Nowy użytkownik: 1234567890"
+# Frontend wysyła {"messages": [...]} — sprawdź format w script.js
 ```
 
-### **Problem: "Backend może nie działać"**
-
+**Błąd Google Calendar**
 ```bash
-# 1. Sprawdź czy serwer działa
-curl http://localhost:5000/api/health
-
-# 2. Sprawdź port
-lsof -i :5000
-
-# 3. Uruchom ponownie
-python backend.py
+# Sprawdź czy credentials.json jest w folderze projektu
+# Sprawdź czy GOOGLE_CALENDAR_ID jest ustawione w .env
+# Sprawdź uprawnienia Service Account do kalendarza
 ```
 
-### **Problem: Błąd Together API**
-
+**Limit GitHub Models (429)**
 ```bash
-# 1. Sprawdź klucz API w .env
-echo $TOGETHER_API_KEY
-
-# 2. Test API
-curl -H "Authorization: Bearer $TOGETHER_API_KEY" \
-     https://api.together.xyz/v1/models
+# Limit ~150 req/dzień na darmowym planie
+# Przejdź na OpenAI API dla produkcji
 ```
-
-### **Problem: Użytkownicy są ignorowani**
-
-1. **Sprawdź tryb rozwoju** - tylko admini mogą pisać
-2. **Dodaj testerów** w Facebook Developers → Roles
-3. **Przejdź przez App Review** dla pełnej publikacji
-
-## 💰 Koszty eksploatacji
-
-- **Together AI**: ~$0.60/1M tokenów (~10-30zł/miesiąc)
-- **ngrok**: Darmowy (podstawowy) | $8/mies (pro)
-- **Hosting**: VPS ~20-50zł/miesiąc
-- **Facebook**: Darmowy
-
-**Szacowany koszt miesięczny: 30-100zł**
 
 ## 🚀 Deployment na produkcję
 
-### **VPS/Serwer**
 ```bash
-# Na serwerze
-git clone https://github.com/USERNAME/smart-faq-bot.git
-cd smart-faq-bot
-pip install -r requirements.txt
+# VPS — instalacja
+git clone https://github.com/roccoss39/Smart-faq-bot.git
+cd Smart-faq-bot && pip install -r requirements.txt
+cp .env.example .env && nano .env
 
-# Konfiguracja
-cp .env.example .env
-nano .env
-
-# Uruchomienie z PM2 (process manager)
-npm install -g pm2
-pm2 start "python backend.py" --name smart-faq-bot
-pm2 startup
-pm2 save
+# Uruchomienie z gunicorn
+pip install gunicorn
+gunicorn -w 2 -b 0.0.0.0:5000 backend:app
 ```
 
-### **Nginx (reverse proxy)**
+Nginx (reverse proxy):
+
 ```nginx
 server {
     listen 80;
     server_name yourdomain.com;
-    
     location / {
         proxy_pass http://localhost:5000;
         proxy_set_header Host $host;
@@ -323,20 +234,24 @@ server {
 }
 ```
 
-## 📞 Wsparcie
+Na produkcji użyj płatnego OpenAI API — GitHub Models ma limit 150 req/dzień.
 
-- **GitHub Issues**: Zgłaszanie błędów
-- **Email**: podziewski39@o2.pl
-- **Facebook**: Problemy z integracją Messenger
+## 💰 Koszty
+
+| Składnik | Koszt |
+|----------|-------|
+| GitHub Models (AI) | Darmowy (150 req/dzień) |
+| OpenAI gpt-4o-mini | ~$0.15/1M tokenów |
+| ngrok darmowy | Zmienny URL |
+| ngrok płatny | ~$8/mies (stały URL) |
+| VPS | ~20–50 zł/mies |
+| Facebook | Darmowy |
 
 ## 📄 Licencja
 
-MIT License - możesz swobodnie używać, modyfikować i dystrybuować.
+MIT License
 
 ---
 
-**🎯 Cel**: Automatyzacja 80% pytań klientów i zwiększenie konwersji o 30%  
-**⚡ Status**: Gotowy do produkcji z pełnym multi-user supportem  
-**🔧 Stack**: Python/Flask + Together AI + Facebook Messenger + JavaScript
-
-**💡 Pro tip**: Regularnie aktualizuj bazę wiedzy na podstawie najczęstszych pytań klientów!
+**Stack:** Python · Flask · OpenAI API · Google Calendar API · Facebook Graph API · JavaScript  
+**Kontakt:** podziewski39@o2.pl
